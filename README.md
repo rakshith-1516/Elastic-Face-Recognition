@@ -1,59 +1,108 @@
 # Elastic Face Recognition Application
 
-## Project Overview
-This project involves developing an elastic face recognition application on AWS using machine learning for face recognition and autoscaling for dynamic resource allocation. The architecture includes a web tier, an application tier, and a custom autoscaling controller.
+An elastic and scalable face recognition system designed using a microservices and serverless architecture. This project is implemented in **four phases**, progressively incorporating AWS services like **EC2, S3, SQS, Lambda, ECR, Greengrass**, and **MQTT** for edge computing.
 
-## Architecture
+---
 
-### Web Tier
-- Handles HTTP POST requests on port 8000 with image uploads.
-- Stores uploaded images in an S3 input bucket.
-- Sends requests to the SQS request queue.
-- Returns face recognition results in plain text (e.g., `filename:prediction`) after receiving the results from the SQS response queue.
+## 📁 Project Structure
 
-### Application Tier
-- Processes face recognition using a deep learning model.
-- Fetches images from the S3 input bucket and stores results in the S3 output bucket.
-- Pushes recognition results to the SQS response queue.
+### Phase 1: Web & Application Tiers
 
-### Autoscaling
-- Custom autoscaling algorithm scales the application tier based on the request queue.
-- Scales up to 15 instances and scales down when there are no pending requests.
+#### 📌 Project 1 - Part 1: Web Tier
 
-## Setup
+This phase builds the web front-end of the application.
 
-### Prerequisites
-- AWS account with EC2, S3, and SQS access.
-- Python 3.x and required libraries (`Flask`, `boto3`, `torch`, etc.).
-- AWS CLI configured.
+- Listens for HTTP `POST` requests on **port 8000**.
+- Accepts image file uploads via HTTP.
+- Uploads images to an **S3 Input Bucket**.
+- Publishes a message to the **SQS Request Queue**.
+- Waits for a response on the **SQS Response Queue**.
+- Responds with face recognition results in plain text: **filename: prediction**
 
-### Instructions
-1. **Web Tier**: 
-   - Run `server.py` to start the web server.
-   - Handles image uploads and communication with the app tier.
+
+#### 📌 Project 1 - Part 2: Application Tier & Autoscaling
+
+This phase implements the face recognition backend with dynamic scaling.
+
+- Polls the **SQS Request Queue** for tasks.
+- Downloads images from the **S3 Input Bucket**.
+- Runs **deep learning-based face recognition**.
+- Uploads results to the **S3 Output Bucket**.
+- Sends results to the **SQS Response Queue**.
+- Implements **custom autoscaling logic**:
+- Scales **up to 15 EC2 instances** based on queue depth.
+- Scales **down to zero** when idle.
+
+---
+
+### Phase 2: Serverless and Edge Enhancements
+
+#### 📌 Project 2 - Part 1: Serverless Lambda Architecture
+
+Refactors backend processing using AWS Lambda.
+
+- Dockerized **face detection** and **recognition** logic.
+- Packaged and uploaded to **AWS ECR**.
+- Lambda functions created from ECR images.
+- Retains original message passing and S3 storage architecture.
+
+#### 📌 Project 2 - Part 2: Edge Computing with AWS Greengrass
+
+Moves detection closer to the source using edge devices.
+
+- Face **detection performed at the edge** using **AWS Greengrass**.
+- Results and images are published to cloud using **MQTT Pub/Sub**.
+- Face **recognition happens in the cloud** using AWS Lambda or EC2 tier.
+- Reduces latency and cloud bandwidth usage.
+
+---
+
+## 🧰 Technologies Used
+
+- **AWS S3** – Image storage
+- **AWS SQS** – Asynchronous message queues
+- **AWS EC2** – Scalable backend compute
+- **AWS Lambda** – Serverless processing
+- **AWS ECR** – Container image storage for Lambda
+- **AWS Greengrass** – Edge runtime for IoT
+- **MQTT** – Lightweight messaging for edge-cloud communication
+- **Docker** – Containerization
+- **Python** – Backend and inference logic
+- **Flask** – HTTP Web server
+
+---
+
+## 🚀 Getting Started
+
+1. **Web Tier**:
+- Run Flask server on port 8000.
+- Set up AWS credentials and configure S3 and SQS.
 
 2. **Application Tier**:
-   - Set up EC2 with deep learning model and required packages.
-   - Implement logic in `backend.py` to process images and return results.
+- Launch EC2 instances with prebuilt AMIs.
+- Deploy autoscaling logic (CloudWatch, scripts, etc.).
 
-3. **Autoscaling**:
-   - Implement autoscaling logic in `controller.py` to manage application tier instances.
+3. **Serverless Setup**:
+- Build and push Docker images to AWS ECR.
+- Deploy Lambda functions from ECR images.
 
-4. **S3 & SQS**:
-   - Create S3 buckets: `<ASU ID>-in-bucket`, `<ASU ID>-out-bucket`.
-   - Create SQS queues: `<ASU ID>-req-queue`, `<ASU ID>-resp-queue`.
+4. **Edge Setup**:
+- Set up AWS Greengrass core on the edge device.
+- Deploy face detection model and MQTT connectors.
 
-## Example Usage
-1. Upload an image via HTTP POST.
-2. The web tier processes and stores the image in S3.
-3. The app tier processes the image and stores results in S3.
-4. The web tier retrieves and returns the result (e.g., `test_000:Paul`).
+---
 
-## Naming Conventions
-- S3 Buckets: `<ASU ID>-in-bucket`, `<ASU ID>-out-bucket`.
-- SQS Queues: `<ASU ID>-req-queue`, `<ASU ID>-resp-queue`.
-- EC2 Instances: `web-instance`, `app-tier-instance-<instance#>`.
+## 📈 Scalability
 
-## Conclusion
-This project utilizes AWS cloud resources to create a scalable face recognition application, incorporating autoscaling and machine learning for real-time processing.
+- Application tier scales dynamically
+- Lambda functions enable near-unlimited concurrency.
+- Edge processing reduces cloud workload, ideal for IoT setups.
 
+---
+
+## 🧪 Sample Output
+
+```text
+image_01.jpg: face detected - John Doe
+image_02.jpg: face not recognized
+image_03.jpg: face detected - Jane Smith
